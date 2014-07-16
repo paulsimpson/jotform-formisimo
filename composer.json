@@ -1,0 +1,5 @@
+{
+  "require": {
+    "jotform/jotform-api-php": "dev-master"
+  }
+}
