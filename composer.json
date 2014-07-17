@@ -1,5 +1,12 @@
 {
   "require": {
     "jotform/jotform-api-php": "dev-master"
+  },
+  "autoload": {
+    "psr-0": {
+      "RequestHandler": "",
+      "ConversionTransporter": "",
+      "WebhookDestroyer": ""
+    }
   }
 }
