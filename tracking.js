@@ -60,8 +60,8 @@
   function createFormisimoData() {
     return {
       cookie: getFormisimoCookie(), //The Formisimo cookie containing the session ID
-      browsertime: new Date().getTime(), //Browser Time
-      timezone: jstz.determine().name() //Browser Timezone. We can use the jstz variable export from the Formisimo tracking file
+      'browsertime-milliseconds': new Date().getTime(), //Browser Time
+      'browser-timezone': jstz.determine().name() //Browser Timezone. We can use the jstz variable export from the Formisimo tracking file
     };
   }
 
