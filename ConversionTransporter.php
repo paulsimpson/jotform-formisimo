@@ -9,9 +9,15 @@ class ConversionTransporter
 	//The Formisimo conversion tracking url
 	private $url = 'http://tracking.formisimo.com/conversion';
 
+	//The data required by Formisimo from the submission
+	private $required = array('browsertime-milliseconds', 'browser-timezone', 'cookie', 'referrer');
+
 	//The submission data
 	private $data;
 
+	/**
+	 * @param array $data
+	 */
 	public function __construct(array $data)
 	{
 		$this->data = $data;
@@ -26,8 +32,10 @@ class ConversionTransporter
 		//init curl
 		$ch = curl_init($this->url);
 
+		$data = $this->getFormisimoData();
+
 		//Set required CURL options
-		curl_setopt_array($ch, $this->getCurlOptions());
+		curl_setopt_array($ch, $this->getCurlOptions($data));
 
 		//execute the CURL request
 		$result = curl_exec($ch);
@@ -48,10 +56,8 @@ class ConversionTransporter
 	 * ready for sending to Formisimo
 	 * @return array
 	 */
-	public function getCurlOptions()
+	public function getCurlOptions(array $data)
 	{
-		$data = $this->getData();
-
 		return array(
 			CURLOPT_POST => count($data),
 			CURLOPT_RETURNTRANSFER => true,
@@ -65,9 +71,39 @@ class ConversionTransporter
 	 * Builds the data we need to pass to Formisimo
 	 * @return array
 	 */
-	private function getData()
+	private function getFormisimoData()
 	{
-		$data = $this->getTrackingData();
+		//Get the data submitted by the tracking widget script
+		$submitted = $this->getSubmittedData();
+
+		/*
+		 * We flip the required array so we can compare
+		 * keys with the submitted data keys.
+		 */
+		$required = array_flip($this->required);
+
+		/*
+		 * Check whether the submitted data contains all of the required data.
+		 * The $diff will let us know data is missing.
+		 */
+		$diff = array_diff_key($required, $submitted);
+
+		/*
+		 * If difference is not empty then we are missing some of the
+		 * required data so stop execution and log the submitted data so we can debug.
+		 */
+		if ( ! empty($diff))
+		{
+			throw new Exception('Required Data Missing. Data: ' . json_encode($submitted));
+		}
+
+		/*
+		 * Just to be safe we will remove any extra data included
+		 * in the submitted data that is not required. This is an extra
+		 * security measure to ensure we are not accidently passing any rogue
+		 * data through to Formisimo
+		 */
+		$data = array_intersect_key($submitted, $required);
 
 		/*
 		 * Add the conversion key to the data
@@ -82,14 +118,15 @@ class ConversionTransporter
 	 * which was created by the tracking.js file
 	 * @return array
 	 */
-	public function getTrackingData()
+	public function getSubmittedData()
 	{
-		$data = isset($rawRequest['formisimo-tracking'])
-			? $rawRequest['formisimo-tracking']
-			: array();
+		//Check we have received the Formisimo tracking data from the submission
+		$data = isset($this->data['formisimo-tracking'])
+			? $this->data['formisimo-tracking']
+			: array(); //Default to empty array
 
-		return is_string($data)
-			? (array) json_decode($data, true)
-			: $data;
+		return ! is_array($data)
+			? (array) json_decode($data, true) //cast array in case json_decode fails
+			: $data; //Just return the array
 	}
 }
