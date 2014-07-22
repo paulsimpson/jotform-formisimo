@@ -76,12 +76,12 @@ class RequestHandler
 		$formID = $this->getParam('formID');
 		$apiKey = $this->getParam('apiKey');
 
-		if ( ! $apiKey or ! $formID)
+		if (is_null($formID))
 		{
-			throw new Exception('Api Key and Form ID are required.');
+			throw new Exception('Form ID is required.');
 		}
 
-		$jotform = new JotForm($apiKey);
+		$jotform = $this->initJotform($apiKey);
 
 		$destroyer = new WebhookDestroyer($jotform, $formID);
 		return $destroyer->run();
@@ -115,7 +115,12 @@ class RequestHandler
 
 		if(is_null($param)) return $default;
 
-		$data = json_decode($this->stripJSON($param), true);
+		/*
+		* Strips extra slashes in JSON
+		* Added because of weird formatting in request data .
+	 	* If I can figure out the reason for that we can remove this.
+		*/
+		$data = json_decode(stripslashes($param), true);
 
 		if ( ! is_null($data)) return $data;
 
@@ -124,16 +129,14 @@ class RequestHandler
 		return is_null($data) ? $default : $data;
 	}
 
-	/**
-	 * Strips extra slashes in JSON
-	 * Added because of weird formatting in request data.
-	 * If I can figure out the reason for that we can remove this function
-	 * @param $str
-	 * @return mixed
-	 */
-	private function stripJSON($str)
+	private function initJotform($apiKey = null)
 	{
-		return str_replace("\\'", "'", str_replace('\\"', '"', $str));
+		if (is_null($apiKey))
+		{
+			throw new Exception('Api Key is required for JotForm api.');
+		}
+
+		return new JotForm($apiKey);
 	}
 
 	/**
