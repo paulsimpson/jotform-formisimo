@@ -26,7 +26,7 @@
   function insertFormisimoData(form) {
 
     //Create the required Formisimo data
-    var data = createFormisimoData();
+    var data = createFormisimoData(form);
 
     /*
      * If for any reason there is no Formisimo cookie
@@ -57,11 +57,12 @@
    * on our backend webhook request but required by
    * Formsimo to match the form events to the conversion.
    */
-  function createFormisimoData() {
+  function createFormisimoData(form) {
     return {
       cookie: getFormisimoCookie(), //The Formisimo cookie containing the session ID
       'browsertime-milliseconds': new Date().getTime(), //Browser Time
-      'browser-timezone': jstz.determine().name() //Browser Timezone. We can use the jstz variable export from the Formisimo tracking file
+      'browser-timezone': jstz.determine().name(), //Browser Timezone. We can use the jstz variable export from the Formisimo tracking file
+      referrer: form.getAttribute('action') || '' //The target Url. We get this here because Jotform varies the url based on the form
     };
   }
 
